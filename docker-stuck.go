@@ -15,13 +15,13 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Good\n")
+	fmt.Println("Good")
 	for _, container := range good {
-		fmt.Println(container.DockerID, " ", container.Pid)
+		fmt.Printf("\tDocker: %s PID: %d\n", container.DockerID, container.Pid)
 	}
 
-	fmt.Println("Bad\n")
+	fmt.Println("Bad")
 	for _, container := range bad {
-		fmt.Println(container.DockerID, " ", container.Pid)
+		fmt.Printf("\tDocker: %s PID: %d\n", container.DockerID, container.Pid)
 	}
 }
