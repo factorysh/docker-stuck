@@ -1,6 +1,10 @@
 bin: vendor
 	go build docker-stuck.go
 
+pull:
+	docker pull bearstech/golang-dep
+	docker pull bearstech/upx
+
 test: vendor
 	go test github.com/factorysh/docker-stuck/containers
 
