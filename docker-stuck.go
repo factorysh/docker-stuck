@@ -17,11 +17,11 @@ func main() {
 	}
 	fmt.Println("Good\n")
 	for _, container := range good {
-		fmt.Println(container)
+		fmt.Println(container.DockerID, " ", container.Pid)
 	}
 
 	fmt.Println("Bad\n")
 	for _, container := range bad {
-		fmt.Println(container)
+		fmt.Println(container.DockerID, " ", container.Pid)
 	}
 }
