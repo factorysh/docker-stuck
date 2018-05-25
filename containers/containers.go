@@ -22,6 +22,7 @@ type Container struct {
 	Pid      int
 }
 
+// Read the cmdline of a pid, and use ' ' as a separator
 func cmdLine(pid int) ([]byte, error) {
 	cmd, err := ioutil.ReadFile(fmt.Sprintf("/proc/%d/cmdline", pid))
 	if err != nil {
@@ -31,11 +32,15 @@ func cmdLine(pid int) ([]byte, error) {
 	return bytes.Replace(cmd, []byte{0}, []byte{32}, -1), nil
 }
 
-func processes2containers(procs []ps.Process) ([]*Container, error) {
+func ContainersFromPs() ([]*Container, error) {
+	procs, err := ps.Processes()
+	if err != nil {
+		return nil, err
+	}
 	containers := make([]*Container, 0)
 	for _, proc := range procs {
 		e := proc.Executable()
-		if strings.HasPrefix(e, "docker-contain") {
+		if strings.HasPrefix(e, "docker-contain") { // Yes, it's truncated, and ugly
 			cmd, err := cmdLine(proc.Pid())
 			if err != nil {
 				return nil, err
@@ -50,12 +55,4 @@ func processes2containers(procs []ps.Process) ([]*Container, error) {
 		}
 	}
 	return containers, nil
-}
-
-func ContainersFromPs() ([]*Container, error) {
-	procs, err := ps.Processes()
-	if err != nil {
-		return nil, err
-	}
-	return processes2containers(procs)
 }
