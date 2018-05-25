@@ -1,13 +1,10 @@
 package containers
 
 import (
-	"context"
-	"fmt"
 	"regexp"
 	"strings"
 
 	ps "github.com/aelsabbahy/go-ps"
-	"github.com/docker/docker/client"
 )
 
 var PatternDockerID *regexp.Regexp
@@ -45,24 +42,4 @@ func ContainersFromPs() ([]*Container, error) {
 		return nil, err
 	}
 	return processes2containers(procs)
-}
-
-func Inspect(id string) error {
-	client, err := client.NewEnvClient()
-	if err != nil {
-		return err
-	}
-	ctx := context.Background()
-	containers, err := ContainersFromPs()
-	if err != nil {
-		return err
-	}
-	for _, container := range containers {
-		i, err := client.ContainerInspect(ctx, container.DockerID)
-		fmt.Println(i)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
