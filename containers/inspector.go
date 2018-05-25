@@ -2,6 +2,7 @@ package containers
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -24,15 +25,15 @@ func NewInspector() (*Inspector, error) {
 	}, nil
 }
 
-func (i *Inspector) inspect(id string, containers chan types.ContainerJSON, errors chan ContainerError) {
+func (i *Inspector) inspect(container *Container, containers chan types.ContainerJSON, errors chan ContainerError) {
 	ci := make(chan types.ContainerJSON, 1)
 	ce := make(chan ContainerError, 1)
 	go func() {
-		insp, err := i.client.ContainerInspect(i.ctx, id)
+		insp, err := i.client.ContainerInspect(i.ctx, container.DockerID)
 		if err == nil {
 			ci <- insp
 		} else {
-			e := &InspectorError{err, id}
+			e := &InspectorError{err, container}
 			ce <- e
 		}
 	}()
@@ -42,7 +43,7 @@ func (i *Inspector) inspect(id string, containers chan types.ContainerJSON, erro
 	case err := <-ce:
 		errors <- err
 	case <-time.After(10 * time.Second):
-		errors <- &InspectorTimeout{id}
+		errors <- &InspectorError{fmt.Errorf("Timeout"), container}
 	}
 }
 
@@ -56,7 +57,7 @@ func (i *Inspector) InspectAll() ([]*Container, []*Container, error) {
 	dico := make(map[string]*Container)
 	for _, container := range containers {
 		dico[container.DockerID] = container
-		go i.inspect(container.DockerID, inspects, errors)
+		go i.inspect(container, inspects, errors)
 	}
 	cpt := len(containers)
 	bad := make([]*Container, 0)
@@ -66,7 +67,7 @@ func (i *Inspector) InspectAll() ([]*Container, []*Container, error) {
 		case insp := <-inspects:
 			good = append(good, dico[insp.ID])
 		case err := <-errors:
-			bad = append(bad, dico[err.ContainerID()])
+			bad = append(bad, err.Container())
 		}
 		cpt--
 	}
