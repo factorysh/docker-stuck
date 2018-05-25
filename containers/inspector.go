@@ -29,7 +29,7 @@ func (i *Inspector) inspect(id string, containers chan types.ContainerJSON, erro
 	ce := make(chan ContainerError, 1)
 	go func() {
 		insp, err := i.client.ContainerInspect(i.ctx, id)
-		if err != nil {
+		if err == nil {
 			ci <- insp
 		} else {
 			e := &InspectorError{err, id}
@@ -56,7 +56,7 @@ func (i *Inspector) InspectAll() ([]*Container, []*Container, error) {
 	dico := make(map[string]*Container)
 	for _, container := range containers {
 		dico[container.DockerID] = container
-		i.inspect(container.DockerID, inspects, errors)
+		go i.inspect(container.DockerID, inspects, errors)
 	}
 	cpt := len(containers)
 	bad := make([]*Container, 0)
