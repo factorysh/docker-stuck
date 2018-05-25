@@ -12,21 +12,26 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	good, bad, err := inspector.InspectAll()
+	n, ci, err := inspector.InspectAll()
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Good")
-	for _, container := range good {
-		fmt.Printf("\tDocker: %s PID: %d\n", container.DockerID, container.Pid)
-	}
 
 	kill := len(os.Args) > 1 && os.Args[1] == "--kill"
-	fmt.Println("Bad")
-	for _, container := range bad {
-		fmt.Printf("\tDocker: %s PID: %d\n", container.DockerID, container.Pid)
+
+	for i := 0; i < n; i++ {
+		insp := <-ci
+		status := "bad "
+		if insp.Err == nil {
+			status = "good"
+		}
+		fmt.Printf("[%s] Docker: %s PID: %d", status, insp.Container.DockerID, insp.Container.Pid)
+		if insp.Err != nil {
+			fmt.Printf(" %s", insp.Err.Error())
+		}
+		fmt.Println()
 		if kill {
-			p, err := os.FindProcess(container.Pid)
+			p, err := os.FindProcess(insp.Container.Pid)
 			if err != nil {
 				panic(err)
 			}

@@ -14,6 +14,12 @@ type Inspector struct {
 	ctx    context.Context
 }
 
+type ContainerInspection struct {
+	Container *Container
+	Inspect   *types.ContainerJSON
+	Err       error
+}
+
 func NewInspector() (*Inspector, error) {
 	client, err := client.NewEnvClient()
 	if err != nil {
@@ -25,51 +31,35 @@ func NewInspector() (*Inspector, error) {
 	}, nil
 }
 
-func (i *Inspector) inspect(container *Container, containers chan types.ContainerJSON, errors chan ContainerError) {
-	ci := make(chan types.ContainerJSON, 1)
-	ce := make(chan ContainerError, 1)
+func (i *Inspector) inspect(container *Container, ci chan *ContainerInspection) {
+	c := make(chan *ContainerInspection, 1)
 	go func() {
 		insp, err := i.client.ContainerInspect(i.ctx, container.DockerID)
-		if err == nil {
-			ci <- insp
-		} else {
-			e := &InspectorError{err, container}
-			ce <- e
+		c <- &ContainerInspection{
+			Container: container,
+			Inspect:   &insp,
+			Err:       err,
 		}
 	}()
 	select {
-	case insp := <-ci:
-		containers <- insp
-	case err := <-ce:
-		errors <- err
+	case insp := <-c:
+		ci <- insp
 	case <-time.After(10 * time.Second):
-		errors <- &InspectorError{fmt.Errorf("Timeout"), container}
+		ci <- &ContainerInspection{
+			Container: container,
+			Err:       fmt.Errorf("Timeout"),
+		}
 	}
 }
 
-func (i *Inspector) InspectAll() ([]*Container, []*Container, error) {
+func (i *Inspector) InspectAll() (int, chan *ContainerInspection, error) {
 	containers, err := ContainersFromPs()
 	if err != nil {
-		return nil, nil, err
+		return 0, nil, err
 	}
-	inspects := make(chan types.ContainerJSON, 1)
-	errors := make(chan ContainerError, 1)
-	dico := make(map[string]*Container)
+	ci := make(chan *ContainerInspection, 1)
 	for _, container := range containers {
-		dico[container.DockerID] = container
-		go i.inspect(container, inspects, errors)
+		go i.inspect(container, ci)
 	}
-	cpt := len(containers)
-	bad := make([]*Container, 0)
-	good := make([]*Container, 0)
-	for cpt > 0 {
-		select {
-		case insp := <-inspects:
-			good = append(good, dico[insp.ID])
-		case err := <-errors:
-			bad = append(bad, err.Container())
-		}
-		cpt--
-	}
-	return good, bad, nil
+	return len(containers), ci, nil
 }
