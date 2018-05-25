@@ -1,6 +1,9 @@
 bin: vendor
 	go build docker-stuck.go
 
+test: vendor
+	go test github.com/factorysh/docker-stuck/containers
+
 docker: vendor
 	docker run -ti --rm \
 	-v `pwd`:/go/src/github.com/factorysh/docker-stuck/ \
