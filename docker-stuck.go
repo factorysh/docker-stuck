@@ -11,10 +11,16 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	_, bad, err := inspector.InspectAll()
+	good, bad, err := inspector.InspectAll()
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println("Good\n")
+	for _, container := range good {
+		fmt.Println(container)
+	}
+
+	fmt.Println("Bad\n")
 	for _, container := range bad {
 		fmt.Println(container)
 	}
