@@ -8,7 +8,7 @@ pull:
 test: vendor
 	go test github.com/factorysh/docker-stuck/containers
 
-docker: vendor
+docker:
 	docker run -ti --rm \
 	-v `pwd`:/go/src/github.com/factorysh/docker-stuck/ \
 	-w /go/src/github.com/factorysh/docker-stuck/ \
@@ -24,3 +24,7 @@ upx:
 
 vendor:
 	dep ensure
+
+clean:
+	rm -rf vendor
+	rm -f docker-stuck
