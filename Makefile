@@ -9,14 +9,14 @@ test: vendor
 	go test github.com/factorysh/docker-stuck/containers
 
 docker:
-	docker run -ti --rm \
+	docker run --rm \
 	-v `pwd`:/go/src/github.com/factorysh/docker-stuck/ \
 	-w /go/src/github.com/factorysh/docker-stuck/ \
     bearstech/golang-dep \
 	make bin
 
 upx:
-	docker run -ti --rm \
+	docker run --rm \
 	-v `pwd`:/upx \
 	-w /upx \
 	bearstech/upx \
